@@ -1,4 +1,4 @@
-# .github\workflows\ci.yml
+# .github/workflows/ci.yml
 
 name: CI
 
@@ -11,6 +11,19 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8
+        env:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: testdb
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
 
     steps:
       - name: Checkout repository
@@ -20,10 +33,18 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm' # Automatically cache node_modules
+          cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Copy env sample
+        run: cp user/.env.sample user/.env
+
+      - name: Set test database URL
+        run: |
+          echo "DATABASE_URL=mysql://root:password@127.0.0.1:3306/testdb" >> user/.env
+          echo "DATABASE_URL=mysql://root:password@127.0.0.1:3306/testdb" >> $GITHUB_ENV
 
       - name: Lint all packages
         run: npx turbo run lint
@@ -31,8 +52,8 @@ jobs:
       - name: Build all packages
         run: npx turbo run build
 
-      - name: Migrate test database
-        run: npx prisma db push
+      - name: Push schema to test database
+        run: npx prisma db push --schema=user/prisma/schema.prisma
 
       - name: Test all packages
         run: npx turbo run test
