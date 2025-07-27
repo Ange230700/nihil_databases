@@ -10,3 +10,4 @@ dist-ssr
 .eslintcache
 coverage
 .vscode
+.turbo
