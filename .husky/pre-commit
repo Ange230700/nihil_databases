@@ -1,4 +1,9 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+set -e  # Exit immediately if a command exits with a non-zero status
+
 npx validate-branch-name
-npm run test
-npx lint-staged
-npm run lint
+npx lint-staged                            # 2. Lint staged files only if tests pass
+npx nx run-many --target=test --all        # 1. Run tests; fail if any fail
+npx nx run-many --target=lint --all        # 3. Lint all if previous succeeded

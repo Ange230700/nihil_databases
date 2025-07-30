@@ -1,4 +1,4 @@
-# .github/workflows/ci.yml
+# .github\workflows\ci.yml
 
 name: CI
 
@@ -9,14 +9,14 @@ on:
     branches: [main, develop]
 
 jobs:
-  build-and-test:
+  affected:
     runs-on: ubuntu-latest
+
     services:
       mysql:
         image: mysql:8
         env:
           MYSQL_ROOT_PASSWORD: password
-          MYSQL_DATABASE: testdb
         ports:
           - 3306:3306
         options: >-
@@ -24,6 +24,9 @@ jobs:
           --health-interval=10s
           --health-timeout=5s
           --health-retries=3
+
+    env:
+      NODE_ENV: test
 
     steps:
       - name: Checkout repository
@@ -35,25 +38,60 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
+      # CACHE NODE_MODULES
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            **/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      # CACHE PRISMA ENGINES & GENERATED CLIENT
+      - name: Cache Prisma artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            **/node_modules/.prisma
+            **/prisma/generated
+          key: ${{ runner.os }}-prisma-${{ hashFiles('**/prisma/schema.prisma') }}
+          restore-keys: |
+            ${{ runner.os }}-prisma-
+
       - name: Install dependencies
         run: npm ci
 
-      - name: Copy env sample
-        run: cp user/.env.sample user/.env
-
-      - name: Set test database URL
+      # Setup DBs (one-time, not per service)
+      - name: Create test databases
         run: |
-          echo "DATABASE_URL=mysql://root:password@127.0.0.1:3306/testdb" >> user/.env
-          echo "DATABASE_URL=mysql://root:password@127.0.0.1:3306/testdb" >> $GITHUB_ENV
+          mysql -h 127.0.0.1 -u root -ppassword -e "CREATE DATABASE IF NOT EXISTS nihil_user_test;"
+          mysql -h 127.0.0.1 -u root -ppassword -e "CREATE DATABASE IF NOT EXISTS nihil_post_test;"
 
-      - name: Lint all packages
-        run: npx turbo run lint
+      # Copy envs for all known services (adjust if you add more)
+      - name: Copy .env.sample to .env
+        run: |
+          cp -n user/.env.sample user/.env || true
+          cp -n post/.env.sample post/.env || true
 
-      - name: Build all packages
-        run: npx turbo run build
+      # Add DB URLs if needed
+      - name: Set test DB URLs
+        run: |
+          echo "USER_DATABASE_URL=mysql://root:password@127.0.0.1:3306/nihil_user_test" >> user/.env
+          echo "POST_DATABASE_URL=mysql://root:password@127.0.0.1:3306/nihil_post_test" >> post/.env
 
-      - name: Push schema to test database
-        run: npx prisma db push --schema=user/prisma/schema.prisma
+      # Lint only affected
+      - name: Lint affected
+        run: npx nx affected --target=lint --parallel=3 --base=origin/${{ github.event.pull_request.base.ref || 'main' }} --head=HEAD
 
-      - name: Test all packages
-        run: npx turbo run test
+      # Build only affected
+      - name: Build affected
+        run: npx nx affected --target=build --parallel=3 --base=origin/${{ github.event.pull_request.base.ref || 'main' }} --head=HEAD
+
+      # Push schemas for affected Prisma projects
+      - name: Push schemas for affected projects
+        run: npx nx affected --target=prisma:db:push --parallel=3 --base=origin/${{ github.event.pull_request.base.ref || 'main' }} --head=HEAD
+
+      # Test only affected
+      - name: Test affected
+        run: npx nx affected --target=test --parallel=3 --base=origin/${{ github.event.pull_request.base.ref || 'main' }} --head=HEAD

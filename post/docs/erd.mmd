@@ -1,0 +1,15 @@
+%% post\docs\erd.mmd
+
+erDiagram
+    post {
+        UUID id PK
+        UUID user_id FK
+        TEXT content
+        STRING media_url
+        DATETIME created_at
+        DATETIME updated_at
+        BOOLEAN is_deleted
+        UUID original_post_id FK "for shares/retweets"
+    }
+    post }|..|| user : "posted by"
+    post ||--|{ post : "shares"

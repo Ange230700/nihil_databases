@@ -1,20 +1,33 @@
 {
-  "name": "nihil_databases",
+  "name": "@nihil_databases/root",
   "packageManager": "npm@11.4.2",
   "workspaces": [
-    "user"
+    "user",
+    "post",
+    "shared"
   ],
   "version": "1.0.0",
-  "description": "",
+  "description": "Nihil Services Databases",
   "main": "index.js",
   "scripts": {
-    "test": "turbo run test",
-    "clean": "rm -rf node_modules package-lock.json dist",
+    "clean:all": "nx run-many --target=clean --all && rm -rf node_modules package-lock.json .nx dist",
+    "build:all": "tsc -b && nx run-many --target=build --all",
+    "lint:all": "eslint --cache --fix && nx run-many --target=lint --all",
+    "test:all": "nx run-many --target=test --all",
+    "prisma:generate:all": "npm run --workspaces prisma:generate",
+    "prisma:migrate:dev:all": "npm run --workspaces prisma:migrate:dev",
+    "prisma:migrate:deploy:all": "npm run --workspaces prisma:migrate:deploy",
+    "prisma:db:push:all": "npm run --workspaces prisma:db:push",
+    "prisma:db:seed:all": "npm run --workspaces prisma:db:seed",
+    "prisma:studio:user": "nx run user:prisma:studio",
+    "prisma:studio:post": "nx run post:prisma:studio",
     "prepare": "husky",
-    "lint": "turbo run lint",
-    "build": "turbo run build",
+    "dev:user": "nx run user:prisma:migrate:dev && nx run user:prisma:generate",
+    "dev:post": "nx run post:prisma:migrate:dev && nx run post:prisma:generate",
+    "copy-envs": "for d in user post; do cp -n $d/.env.sample $d/.env || true; done",
     "commit": "git-cz",
-    "commitlint": "commitlint --edit"
+    "commitlint": "commitlint --edit",
+    "postinstall": "npm run build:all && npm run prisma:generate:all"
   },
   "keywords": [],
   "author": "",
@@ -24,6 +37,9 @@
     "@commitlint/cli": "^19.8.1",
     "@commitlint/config-conventional": "^19.8.1",
     "@eslint/js": "^9.28.0",
+    "@nx/devkit": "^21.3.9",
+    "@nx/workspace": "^21.3.9",
+    "@types/jest": "^30.0.0",
     "commitizen": "^4.3.1",
     "cz-conventional-changelog": "^3.3.0",
     "eslint": "^9.28.0",
@@ -32,14 +48,15 @@
     "globals": "^16.2.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.1.0",
+    "nx": "21.3.9",
     "prettier": "^3.5.3",
-    "turbo": "^2.5.5",
+    "tsconfig-paths": "^4.2.0",
     "typescript-eslint": "^8.33.1",
     "validate-branch-name": "^1.3.2"
   },
   "lint-staged": {
     "prisma/schema.prisma": [
-      "prisma format"
+      "npm run prisma:format"
     ],
     "*.{js,ts,json}": [
       "prettier --write",

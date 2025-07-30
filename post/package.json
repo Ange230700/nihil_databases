@@ -1,7 +1,7 @@
 {
-  "name": "@nihil_databases/user",
+  "name": "@nihil_databases/post",
   "version": "1.0.0",
-  "description": "User Service Database",
+  "description": "Post Service Database",
   "main": "index.js",
   "directories": {
     "doc": "docs"
@@ -40,7 +40,6 @@
     "typescript": "^5.8.3"
   },
   "jest": {
-    "globalSetup": "./prisma/testSetup.ts",
     "moduleFileExtensions": [
       "js",
       "json",

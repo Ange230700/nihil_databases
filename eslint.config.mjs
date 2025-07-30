@@ -10,10 +10,17 @@ import eslintPluginPrettierRecommended from "eslint-plugin-prettier/recommended"
 export default defineConfig([
   globalIgnores([
     "node_modules",
+    "user/node_modules",
+    "post/node_modules",
     ".git",
     ".vscode",
     "package-lock.json",
     "dist",
+    "shared/dist",
+    "user/dist",
+    "post/dist",
+    "user/prisma/generated",
+    "post/prisma/generated",
   ]),
   {
     files: ["**/*.{js,mjs,cjs,ts,mts,cts}"],

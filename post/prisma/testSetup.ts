@@ -1,4 +1,4 @@
-// user/prisma/testSetup.ts
+// post\prisma\testSetup.ts
 
 import { execSync } from "node:child_process";
 
