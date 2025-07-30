@@ -85,11 +85,8 @@ jobs:
         run: npx nx affected --target=lint --parallel=3 --base=origin/${{ github.event.pull_request.base.ref || 'main' }} --head=HEAD
 
       # Build only affected
-      - name: Build shared package first
-        run: npx nx run @nihil_databases/shared:build
-
-      - name: Build all
-        run: npm run build:all
+      - name: Build affected (shared, user, post)
+        run: npx nx affected --target=build --parallel=3 --base=origin/${{ github.event.pull_request.base.ref || 'main' }} --head=HEAD
 
       # Push schemas for affected Prisma projects
       - name: Push schemas for affected projects

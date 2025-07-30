@@ -11,7 +11,7 @@
   "main": "index.js",
   "scripts": {
     "clean:all": "nx run-many --target=clean --all && rm -rf node_modules package-lock.json .eslintcache",
-    "build:all": "nx run-many --target=build --all",
+    "build:all": "nx run @nihil_databases/shared:build && nx run @nihil_databases/user:build && nx run @nihil_databases/post:build",
     "lint:all": "eslint --cache --fix && nx run-many --target=lint --all",
     "test:all": "nx run-many --target=test --all",
     "prisma:generate:all": "npm run --workspaces prisma:generate",
