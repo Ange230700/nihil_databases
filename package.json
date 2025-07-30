@@ -10,7 +10,7 @@
   "description": "Nihil Services Databases",
   "main": "index.js",
   "scripts": {
-    "clean:all": "nx run-many --target=clean --all && rm -rf node_modules package-lock.json .nx dist",
+    "clean:all": "nx run-many --target=clean --all && rm -rf node_modules package-lock.json .eslintcache",
     "build:all": "nx run-many --target=build --all",
     "lint:all": "eslint --cache --fix && nx run-many --target=lint --all",
     "test:all": "nx run-many --target=test --all",
