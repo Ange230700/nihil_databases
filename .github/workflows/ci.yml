@@ -16,7 +16,7 @@ jobs:
       mysql:
         image: mysql:8
         env:
-          MYSQL_ROOT_PASSWORD: password
+          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
         ports:
           - 3306:3306
         options: >-
@@ -65,8 +65,8 @@ jobs:
       # Setup DBs (one-time, not per service)
       - name: Create test databases
         run: |
-          mysql -h 127.0.0.1 -u root -ppassword -e "CREATE DATABASE IF NOT EXISTS nihil_user_test;"
-          mysql -h 127.0.0.1 -u root -ppassword -e "CREATE DATABASE IF NOT EXISTS nihil_post_test;"
+          mysql -h 127.0.0.1 -u root -p${{ secrets.MYSQL_ROOT_PASSWORD }} -e "CREATE DATABASE IF NOT EXISTS nihil_user_test;"
+          mysql -h 127.0.0.1 -u root -p${{ secrets.MYSQL_ROOT_PASSWORD }} -e "CREATE DATABASE IF NOT EXISTS nihil_post_test;"
 
       # Copy envs for all known services (adjust if you add more)
       - name: Copy .env.sample to .env
@@ -77,8 +77,8 @@ jobs:
       # Add DB URLs if needed
       - name: Set test DB URLs
         run: |
-          echo 'USER_DATABASE_URL="mysql://390565_ange:RD.d3@4vf6fwcr.@mysql-ange230700.alwaysdata.net:3306/ange230700_nihil_user"' >> user/.env
-          echo 'POST_DATABASE_URL="mysql://390565_ange:RD.d3@4vf6fwcr.@mysql-ange230700.alwaysdata.net:3306/ange230700_nihil_post"' >> post/.env
+          echo 'USER_DATABASE_URL=${{ secrets.USER_DATABASE_URL }}' >> user/.env
+          echo 'POST_DATABASE_URL=${{ secrets.POST_DATABASE_URL }}' >> post/.env
 
       # Lint only affected
       - name: Lint affected
