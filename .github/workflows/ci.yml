@@ -85,8 +85,14 @@ jobs:
         run: npx nx affected --target=lint --parallel=3 --base=origin/${{ github.event.pull_request.base.ref || 'main' }} --head=HEAD
 
       # Build only affected
+      - name: Check TypeScript version
+        run: npx tsc --version
+      - name: Clean all build outputs
+        run: rm -rf shared/dist shared/.tsbuildinfo user/dist user/.tsbuildinfo post/dist post/.tsbuildinfo
       - name: Build affected (shared, user, post)
         run: npx nx affected --target=build --parallel=3 --base=origin/${{ github.event.pull_request.base.ref || 'main' }} --head=HEAD
+      - name: Debug shared output
+        run: ls -lh shared/dist
 
       # Push schemas for affected Prisma projects
       - name: Push schemas for affected projects
