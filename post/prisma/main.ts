@@ -1,8 +1,8 @@
 // post\prisma\main.ts
 
-import prisma from "@nihil/post/prisma/lib/client";
-import seedPosts from "@nihil/post/prisma/seed";
-import { runSeed } from "@nihil/shared";
+import prisma from "nihildbpost/prisma/lib/client";
+import seedPosts from "nihildbpost/prisma/seed";
+import { runSeed } from "nihildbshared";
 
 async function main() {
   runSeed(seedPosts, "Post seeding");

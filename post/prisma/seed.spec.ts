@@ -1,7 +1,7 @@
 // post\prisma\seed.spec.ts
 
-import prisma from "@nihil/post/prisma/lib/client";
-import seedPosts, { NUM_POSTS } from "@nihil/post/prisma/seed";
+import prisma from "nihildbpost/prisma/lib/client";
+import seedPosts, { NUM_POSTS } from "nihildbpost/prisma/seed";
 
 describe("Post Seeding", () => {
   beforeAll(async () => {

@@ -15,11 +15,11 @@
     "allowJs": true,
     "baseUrl": ".",
     "paths": {
-      "@nihil/*": ["./*"],
-      "@nihil/shared": ["shared/src/index.ts"],
-      "@nihil/shared/*": ["shared/src/*"],
-      "@nihil/user/*": ["user/*"],
-      "@nihil/post/*": ["post/*"]
+      "nihildb/*": ["./*"],
+      "nihildbshared": ["shared/src/index.ts"],
+      "nihildbshared/*": ["shared/src/*"],
+      "nihildbuser/*": ["user/*"],
+      "nihildbpost/*": ["post/*"]
     }
   }
 }

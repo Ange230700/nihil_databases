@@ -1,8 +1,8 @@
 // post\prisma\seed.ts
 
-import prisma from "@nihil/post/prisma/lib/client";
+import prisma from "nihildbpost/prisma/lib/client";
 import { faker } from "@faker-js/faker";
-import { deleteSafely } from "@nihil/shared";
+import { deleteSafely } from "nihildbshared";
 
 export const NUM_POSTS = 20;
 

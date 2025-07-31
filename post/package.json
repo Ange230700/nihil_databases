@@ -1,8 +1,16 @@
 {
-  "name": "@nihil_databases/post",
+  "name": "nihildbpost",
   "version": "1.0.0",
   "description": "Post Service Database",
-  "main": "index.js",
+  "main": "prisma/lib/client.js",
+  "types": "prisma/lib/client.d.ts",
+  "files": [
+    "prisma/generated",
+    "prisma/lib"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "directories": {
     "doc": "docs"
   },
@@ -66,10 +74,10 @@
     "coverageDirectory": "./coverage",
     "testEnvironment": "node",
     "moduleNameMapper": {
-      "^@nihil/shared$": "<rootDir>/../shared/src/index.ts",
-      "^@nihil/shared/(.*)$": "<rootDir>/../shared/src/$1",
-      "^@nihil/user/(.*)$": "<rootDir>/../user/$1",
-      "^@nihil/post/(.*)$": "<rootDir>/../post/$1"
+      "^nihildbshared$": "<rootDir>/../shared/src/index.ts",
+      "^nihildbshared/(.*)$": "<rootDir>/../shared/src/$1",
+      "^nihildbuser/(.*)$": "<rootDir>/../user/$1",
+      "^nihildbpost/(.*)$": "<rootDir>/../post/$1"
     }
   },
   "prisma": {

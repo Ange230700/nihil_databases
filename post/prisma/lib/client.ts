@@ -1,6 +1,6 @@
 // post\prisma\lib\client.ts
 
-import { PrismaClient } from "@nihil/post/prisma/generated/client";
+import { PrismaClient } from "nihildbpost/prisma/generated/client";
 
 const prisma = new PrismaClient();
 

@@ -9,7 +9,6 @@ dist-ssr
 .env.test
 .eslintcache
 coverage
-.turbo
 generated
 tsconfig.tsbuildinfo
 
