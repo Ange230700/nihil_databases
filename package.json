@@ -29,14 +29,23 @@
     "commitlint": "commitlint --edit",
     "postinstall": "npx tsc --version && rm -rf shared/dist shared/tsconfig.tsbuildinfo user/dist user/tsconfig.tsbuildinfo post/dist post/tsconfig.tsbuildinfo && npm run build:all && ls -lh shared/dist && npm run prisma:generate:all"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ange230700/nihil_databases.git"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "module",
+  "bugs": {
+    "url": "https://github.com/Ange230700/nihil_databases/issues"
+  },
+  "homepage": "https://github.com/Ange230700/nihil_databases#readme",
   "devDependencies": {
     "@commitlint/cli": "^19.8.1",
     "@commitlint/config-conventional": "^19.8.1",
     "@eslint/js": "^9.28.0",
+    "@faker-js/faker": "^9.8.0",
     "@nx/devkit": "^21.3.9",
     "@nx/workspace": "^21.3.9",
     "@types/jest": "^30.0.0",
@@ -48,7 +57,7 @@
     "globals": "^16.2.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.1.0",
-    "nx": "21.3.9",
+    "nx": "^21.3.9",
     "prettier": "^3.5.3",
     "tsconfig-paths": "^4.2.0",
     "typescript-eslint": "^8.33.1",
