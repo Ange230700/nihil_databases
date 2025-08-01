@@ -20,7 +20,7 @@
     "prisma:migrate:dev:all": "npm run --workspaces prisma:migrate:dev",
     "prisma:migrate:deploy:all": "npm run --workspaces prisma:migrate:deploy",
     "prisma:db:push:all": "npm run --workspaces prisma:db:push",
-    "prisma:db:seed:all": "npm run --workspaces prisma:db:seed",
+    "prisma:db:seed:all": "nx run-many --target=prisma:db:seed --all",
     "prisma:studio:user": "nx run user:prisma:studio",
     "prisma:studio:post": "nx run post:prisma:studio",
     "prepare": "husky",
