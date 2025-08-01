@@ -14,6 +14,7 @@
     "nihildbpost",
     "nihildbshared",
     "nihildbuser",
+    "openssl",
     "ppassword",
     "prisma",
     "randompassword",
