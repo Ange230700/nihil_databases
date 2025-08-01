@@ -1,6 +1,6 @@
 {
   "name": "nihildbpost",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Post Service Database",
   "main": "prisma/lib/client.js",
   "types": "prisma/lib/client.d.ts",
@@ -15,11 +15,10 @@
     "doc": "docs"
   },
   "scripts": {
-    "pretest": "npm run prisma:migrate:reset:force",
+    "pretest": "npm run prisma:format && npm run prisma:migrate:reset:force",
     "test": "jest",
     "lint": "eslint .",
     "clean": "rm -rf dist prisma/generated node_modules tsconfig.tsbuildinfo",
-    "postinstall": "npm run prisma:format && npm run prisma:generate",
     "prisma:generate": "prisma generate",
     "prisma:migrate:dev": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",
@@ -31,7 +30,8 @@
     "prisma:db:pull": "prisma db pull",
     "prisma:format": "prisma format",
     "db:cleanup": "tsx prisma/helpers/cleanUp.ts",
-    "prisma:studio": "prisma studio"
+    "prisma:studio": "prisma studio",
+    "publish:package": "npm publish --access public"
   },
   "keywords": [],
   "author": "",
@@ -50,6 +50,7 @@
     "typescript": "^5.8.3"
   },
   "jest": {
+    "globalSetup": "./prisma/testSetup.ts",
     "moduleFileExtensions": [
       "js",
       "json",

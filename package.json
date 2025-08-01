@@ -11,6 +11,7 @@
   "description": "Nihil Services Databases",
   "main": "index.js",
   "scripts": {
+    "publish:all:packages": "nx run-many --target=publish:package --all",
     "clean:all": "nx run-many --target=clean --all && rm -rf node_modules package-lock.json .eslintcache .nx/cache .nx/workspace-data",
     "build:all": "nx run nihildbshared:build && nx run nihildbuser:build && nx run nihildbpost:build",
     "lint:all": "eslint --cache --fix && nx run-many --target=lint --all",
