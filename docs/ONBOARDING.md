@@ -1,4 +1,4 @@
-## **docs/ONBOARDING.md**
+ <!-- docs/ONBOARDING.md -->
 
 # Nihil Databases – Onboarding Guide
 
