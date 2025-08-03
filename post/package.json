@@ -1,6 +1,6 @@
 {
   "name": "nihildbpost",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Post Service Database",
   "main": "prisma/lib/client.js",
   "types": "prisma/lib/client.d.ts",
