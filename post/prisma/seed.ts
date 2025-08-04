@@ -16,7 +16,7 @@ async function seedPosts(skipCleanup = false) {
   const userIds = Array.from({ length: 5 }, (_, i) => `user-${i}`);
 
   const posts = Array.from({ length: NUM_POSTS }).map(() => ({
-    content: faker.lorem.sentences({ min: 1, max: 3 }),
+    content: faker.lorem.sentences({ min: 1, max: 3 }).slice(0, 191),
     mediaUrl: faker.datatype.boolean() ? faker.image.url() : null,
     isDeleted: false,
     createdAt: faker.date.past(),
