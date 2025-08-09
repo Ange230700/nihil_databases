@@ -1,0 +1,2 @@
+npx nx affected --target=test --parallel=3 --base=origin/HEAD~1 --head=HEAD
+npx nx affected --target=lint --parallel=3 --base=origin/HEAD~1 --head=HEAD
