@@ -1,5 +1,14 @@
 # .prettierignore
 
-# Ignore artifacts:
-build
-coverage
+node_modules
+user/node_modules
+post/node_modules
+.git
+.vscode
+package-lock.json
+dist
+shared/dist
+user/dist
+post/dist
+user/prisma/generated
+post/prisma/generated
