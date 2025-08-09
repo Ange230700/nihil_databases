@@ -15,6 +15,7 @@ jobs:
       MYSQL_VERSION: "8.4"
       MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
       MYSQL_DATA_DIR: .ci/mysql-data
+      MYSQL_CACHE_SALT: "v1"
 
     steps:
       - name: Checkout repository
@@ -26,9 +27,9 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: ${{ env.MYSQL_DATA_DIR }}
-          key: ${{ runner.os }}-mysql-${{ env.MYSQL_VERSION }}-${{ hashFiles('**/prisma/schema.prisma') }}
+          key: ${{ runner.os }}-mysql-${{ env.MYSQL_VERSION }}-${{ env.MYSQL_CACHE_SALT }}-${{ hashFiles('**/prisma/schema.prisma') }}
           restore-keys: |
-            ${{ runner.os }}-mysql-${{ env.MYSQL_VERSION }}-
+            ${{ runner.os }}-mysql-${{ env.MYSQL_VERSION }}-${{ env.MYSQL_CACHE_SALT }}-
 
       - name: Start MySQL (with automatic datadir recovery)
         run: |
@@ -36,12 +37,11 @@ jobs:
 
           DATADIR="${MYSQL_DATA_DIR}"
 
-          # kill any pre-existing container from previous steps
           docker rm -f mysql-ci 2>/dev/null || true
 
           ensure_datadir() {
             mkdir -p "$DATADIR"
-            # mysql image runs as uid/gid 999 on Debian
+            # mysql image runs as uid/gid 999
             sudo chown -R 999:999 "$DATADIR"
           }
 
@@ -65,7 +65,6 @@ jobs:
               fi
               if docker exec mysql-ci mysqladmin ping -uroot -p"${MYSQL_ROOT_PASSWORD}" --silent; then
                 echo "MySQL is ready"
-                touch "${DATADIR}/.healthy"
                 return 0
               fi
               echo "Waiting for MySQL…"
@@ -82,32 +81,45 @@ jobs:
             sudo chown -R 999:999 "$DATADIR"
           }
 
+          # ---------- Boot ----------
           ensure_datadir
           start_mysql
-
-          # quick sanity check; if the container dies immediately, print logs & recover
           sleep 2
           if ! container_running; then
-            echo "MySQL container exited right after start. Logs:"
-            docker logs mysql-ci || true
+            echo "Container died on boot. Logs:"; docker logs mysql-ci || true
             recover_datadir
             start_mysql
             sleep 2
           fi
-
-          # final readiness wait; if it still fails, try one last recovery-and-wait
+          
+          # First readiness
           if ! wait_mysql_ready; then
             echo "Initial wait failed. Attempting datadir recovery and retry…"
             docker logs mysql-ci || true
             recover_datadir
             start_mysql
             sleep 2
-            if ! wait_mysql_ready; then
-              echo "MySQL did not become ready after recovery." >&2
-              docker logs mysql-ci || true
-              exit 1
-            fi
+            wait_mysql_ready || { echo "MySQL did not become ready after recovery."; docker logs mysql-ci || true; exit 1; }
           fi
+          
+          # ---------- Root login probe ----------
+          set +e
+          docker exec -i mysql-ci mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" -e "SELECT 1" >/dev/null 2>&1
+          LOGIN_RC=$?
+          set -e
+          
+          if [ "$LOGIN_RC" -ne 0 ]; then
+            echo "❌ Root login failed (likely password mismatch with cached datadir). Re-initializing datadir…"
+            recover_datadir
+            start_mysql
+            sleep 2
+            wait_mysql_ready || { echo "MySQL failed to become ready after re-init."; docker logs mysql-ci || true; exit 1; }
+            # try again
+            docker exec -i mysql-ci mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" -e "SELECT 1" >/dev/null
+          fi
+          
+          # mark healthy only if we could log in as root
+          touch "${DATADIR}/.healthy"
 
 
       - name: Save MySQL data cache
@@ -115,7 +127,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: ${{ env.MYSQL_DATA_DIR }}
-          key: ${{ steps.mysql-cache-restore.outputs.cache-primary-key || format('{0}-mysql-{1}-{2}', runner.os, env.MYSQL_VERSION, hashFiles('**/prisma/schema.prisma')) }}
+          key: ${{ steps.mysql-cache-restore.outputs.cache-primary-key || format('{0}-mysql-{1}-{2}-{3}', runner.os, env.MYSQL_VERSION, env.MYSQL_CACHE_SALT, hashFiles('**/prisma/schema.prisma')) }}
 
       - name: Create test databases (idempotent)
         run: |
