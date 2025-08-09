@@ -185,7 +185,7 @@ jobs:
           path: |
             **/node_modules/.prisma
             **/prisma/generated
-          key: ${{ runner.os }}-prisma-${{ hashFiles('**/prisma/schema.prisma') }}
+          key: ${{ runner.os }}-prisma-${{ hashFiles('**/prisma/schema.prisma', 'package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-prisma-
 
