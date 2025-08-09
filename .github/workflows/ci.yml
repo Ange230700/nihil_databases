@@ -91,7 +91,7 @@ jobs:
       - name: Clean all build outputs
         run: rm -rf shared/dist shared/.tsbuildinfo user/dist user/.tsbuildinfo post/dist post/.tsbuildinfo
       - name: Build affected (shared, user, post)
-        run: npx nx affected --target=build --parallel=3 --base=origin/${{ github.event.pull_request.base.ref || 'main' }} --head=HEAD
+        run: npx nx affected --target=build --configuration=ci --parallel=3 --base=origin/${{ github.event.pull_request.base.ref || 'main' }} --head=HEAD
 
       # Push schemas for affected Prisma projects
       - name: Push schemas for affected projects
