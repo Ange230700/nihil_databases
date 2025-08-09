@@ -15,7 +15,7 @@ jobs:
       MYSQL_VERSION: "8.4"
       MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
       MYSQL_DATA_DIR: .ci/mysql-data
-      MYSQL_CACHE_SALT: "v1"
+      MYSQL_CACHE_SALT: "v2"
 
     steps:
       - name: Checkout repository
@@ -103,17 +103,28 @@ jobs:
           fi
           
           # ---------- Root login probe ----------
-          set +e
-          docker exec -i mysql-ci mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" -e "SELECT 1" >/dev/null 2>&1
-          LOGIN_RC=$?
-          set -e
+          wait_mysql_login() {
+            for i in {1..60}; do
+              if docker exec -i mysql-ci \
+                mysql --protocol=socket -S /var/run/mysqld/mysqld.sock \
+                      -uroot -p"${MYSQL_ROOT_PASSWORD}" \
+                      --connect-timeout=2 -e "SELECT 1" >/dev/null 2>&1; then
+                echo "Root login OK"
+                return 0
+              fi
+              echo "Waiting for root account to become available… ($i/60)"
+              sleep 2
+            done
+            return 1
+          }
           
-          if [ "$LOGIN_RC" -ne 0 ]; then
-            echo "❌ Root login failed (likely password mismatch with cached datadir). Re-initializing datadir…"
+          if ! wait_mysql_login; then
+            echo "❌ Root login failed (possibly password mismatch with cached datadir). Re-initializing datadir…"
             recover_datadir
-            start_mysql
+            start_mysql --innodb-buffer-pool-size=128M
             sleep 2
             wait_mysql_ready || { echo "MySQL failed to become ready after re-init."; docker logs mysql-ci || true; exit 1; }
+            wait_mysql_login || { echo "Root login still failing after re-init."; docker logs mysql-ci || true; exit 1; }
             # try again
             docker exec -i mysql-ci mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" -e "SELECT 1" >/dev/null
           fi
@@ -131,8 +142,14 @@ jobs:
 
       - name: Create test databases (idempotent)
         run: |
-          docker exec -i mysql-ci mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" -e "CREATE DATABASE IF NOT EXISTS nihil_user_test;"
-          docker exec -i mysql-ci mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" -e "CREATE DATABASE IF NOT EXISTS nihil_post_test;"
+          docker exec -i mysql-ci \
+            mysql --protocol=socket -S /var/run/mysqld/mysqld.sock \
+                  -uroot -p"${MYSQL_ROOT_PASSWORD}" \
+                  -e "CREATE DATABASE IF NOT EXISTS nihil_user_test;"
+          docker exec -i mysql-ci \
+            mysql --protocol=socket -S /var/run/mysqld/mysqld.sock \
+                  -uroot -p"${MYSQL_ROOT_PASSWORD}" \
+                  -e "CREATE DATABASE IF NOT EXISTS nihil_post_test;"
 
       - name: Copy .env.sample to .env
         run: |
