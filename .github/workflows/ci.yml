@@ -33,15 +33,18 @@ jobs:
       - name: Start MySQL (with automatic datadir recovery)
         run: |
           set -euo pipefail
-                  
+
           DATADIR="${MYSQL_DATA_DIR}"
-                  
+
+          # kill any pre-existing container from previous steps
+          docker rm -f mysql-ci 2>/dev/null || true
+
           ensure_datadir() {
             mkdir -p "$DATADIR"
-            # MySQL official image runs as uid/gid 999
+            # mysql image runs as uid/gid 999 on Debian
             sudo chown -R 999:999 "$DATADIR"
           }
-                  
+
           start_mysql() {
             docker run -d --name mysql-ci \
               -e MYSQL_ROOT_PASSWORD="${MYSQL_ROOT_PASSWORD}" \
@@ -49,29 +52,28 @@ jobs:
               -v "$PWD/${DATADIR}":/var/lib/mysql \
               "mysql:${MYSQL_VERSION}"
           }
-                  
+
           container_running() {
             docker inspect -f '{{.State.Running}}' mysql-ci 2>/dev/null | grep -q true
           }
-                  
+
           wait_mysql_ready() {
             for i in {1..60}; do
               if ! container_running; then
                 echo "MySQL container is not running (attempt ${i})."
                 return 1
               fi
-                  
               if docker exec mysql-ci mysqladmin ping -uroot -p"${MYSQL_ROOT_PASSWORD}" --silent; then
                 echo "MySQL is ready"
+                touch "${DATADIR}/.healthy"
                 return 0
               fi
-                  
               echo "Waiting for MySQL…"
               sleep 2
             done
             return 1
           }
-                  
+
           recover_datadir() {
             echo "⚠️  Recovering from unusable datadir: clearing cached MySQL data dir…"
             docker rm -f mysql-ci || true
@@ -79,8 +81,7 @@ jobs:
             mkdir -p "$DATADIR"
             sudo chown -R 999:999 "$DATADIR"
           }
-                  
-          # --- Boot sequence with recovery ---
+
           ensure_datadir
           start_mysql
 
@@ -107,6 +108,14 @@ jobs:
               exit 1
             fi
           fi
+
+
+      - name: Save MySQL data cache
+        if: always() && hashFiles(format('{0}/.healthy', env.MYSQL_DATA_DIR)) != ''
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ env.MYSQL_DATA_DIR }}
+          key: ${{ steps.mysql-cache-restore.outputs.cache-primary-key || format('{0}-mysql-{1}-{2}', runner.os, env.MYSQL_VERSION, hashFiles('**/prisma/schema.prisma')) }}
 
       - name: Create test databases (idempotent)
         run: |
