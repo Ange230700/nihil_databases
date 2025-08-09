@@ -50,7 +50,7 @@ jobs:
               -e MYSQL_ROOT_PASSWORD="${MYSQL_ROOT_PASSWORD}" \
               -p 3306:3306 \
               -v "$PWD/${DATADIR}":/var/lib/mysql \
-              "mysql:${MYSQL_VERSION}"
+              "mysql:${MYSQL_VERSION}" "$@"
           }
 
           container_running() {
@@ -94,12 +94,14 @@ jobs:
           
           # First readiness
           if ! wait_mysql_ready; then
-            echo "Initial wait failed. Attempting datadir recovery and retry…"
+            echo "❌ Root login failed (possibly pw mismatch). Re-initializing datadir…"
             docker logs mysql-ci || true
-            recover_datadir
+            # this arg now works, because start_mysql forwards "$@"
+            recover_datadir --innodb-buffer-pool-size=128M
             start_mysql
             sleep 2
-            wait_mysql_ready || { echo "MySQL did not become ready after recovery."; docker logs mysql-ci || true; exit 1; }
+            wait_mysql_ready || { echo "MySQL failed to become ready after re-init."; docker logs mysql-ci || true; exit 1; }
+            wait_mysql_login || { echo "Root login still failing after re-init."; docker logs mysql-ci || true; exit 1; }
           fi
           
           # ---------- Root login probe ----------
@@ -129,8 +131,8 @@ jobs:
             docker exec -i mysql-ci mysql -uroot -p"${MYSQL_ROOT_PASSWORD}" -e "SELECT 1" >/dev/null
           fi
           
-          # mark healthy only if we could log in as root
-          touch "${DATADIR}/.healthy"
+          # write the health marker INSIDE the container, then make it world-readable
+          docker exec mysql-ci sh -lc 'install -m 644 /dev/null /var/lib/mysql/.healthy'
 
 
       - name: Save MySQL data cache
