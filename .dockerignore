@@ -1,0 +1,9 @@
+node_modules
+dist
+.nx
+.nyc_output
+coverage
+.eslintcache
+**/.prisma
+**/prisma/generated
+.git
