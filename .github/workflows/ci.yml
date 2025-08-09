@@ -30,29 +30,83 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-mysql-${{ env.MYSQL_VERSION }}-
 
-      - name: Ensure datadir exists
-        run: mkdir -p "${MYSQL_DATA_DIR}"
-
-      - name: Start MySQL (mounted datadir)
+      - name: Start MySQL (with automatic datadir recovery)
         run: |
-          docker run -d --name mysql-ci \
-            -e MYSQL_ROOT_PASSWORD="${MYSQL_ROOT_PASSWORD}" \
-            -p 3306:3306 \
-            -v "$PWD/${MYSQL_DATA_DIR}":/var/lib/mysql \
-            "mysql:${MYSQL_VERSION}" \
-            --default-authentication-plugin=mysql_native_password
+          set -euo pipefail
+                  
+          DATADIR="${MYSQL_DATA_DIR}"
+                  
+          ensure_datadir() {
+            mkdir -p "$DATADIR"
+            # MySQL official image runs as uid/gid 999
+            sudo chown -R 999:999 "$DATADIR"
+          }
+                  
+          start_mysql() {
+            docker run -d --name mysql-ci \
+              -e MYSQL_ROOT_PASSWORD="${MYSQL_ROOT_PASSWORD}" \
+              -p 3306:3306 \
+              -v "$PWD/${DATADIR}":/var/lib/mysql \
+              "mysql:${MYSQL_VERSION}"
+          }
+                  
+          container_running() {
+            docker inspect -f '{{.State.Running}}' mysql-ci 2>/dev/null | grep -q true
+          }
+                  
+          wait_mysql_ready() {
+            for i in {1..60}; do
+              if ! container_running; then
+                echo "MySQL container is not running (attempt ${i})."
+                return 1
+              fi
+                  
+              if docker exec mysql-ci mysqladmin ping -uroot -p"${MYSQL_ROOT_PASSWORD}" --silent; then
+                echo "MySQL is ready"
+                return 0
+              fi
+                  
+              echo "Waiting for MySQL…"
+              sleep 2
+            done
+            return 1
+          }
+                  
+          recover_datadir() {
+            echo "⚠️  Recovering from unusable datadir: clearing cached MySQL data dir…"
+            docker rm -f mysql-ci || true
+            sudo rm -rf "$DATADIR"
+            mkdir -p "$DATADIR"
+            sudo chown -R 999:999 "$DATADIR"
+          }
+                  
+          # --- Boot sequence with recovery ---
+          ensure_datadir
+          start_mysql
 
-      - name: Wait for MySQL readiness
-        run: |
-          for i in {1..60}; do
-            if docker exec mysql-ci mysqladmin ping -uroot -p"${MYSQL_ROOT_PASSWORD}" --silent; then
-              echo "MySQL is ready"; exit 0
+          # quick sanity check; if the container dies immediately, print logs & recover
+          sleep 2
+          if ! container_running; then
+            echo "MySQL container exited right after start. Logs:"
+            docker logs mysql-ci || true
+            recover_datadir
+            start_mysql
+            sleep 2
+          fi
+
+          # final readiness wait; if it still fails, try one last recovery-and-wait
+          if ! wait_mysql_ready; then
+            echo "Initial wait failed. Attempting datadir recovery and retry…"
+            docker logs mysql-ci || true
+            recover_datadir
+            start_mysql
+            sleep 2
+            if ! wait_mysql_ready; then
+              echo "MySQL did not become ready after recovery." >&2
+              docker logs mysql-ci || true
+              exit 1
             fi
-            echo "Waiting for MySQL…"; sleep 2
-          done
-          echo "MySQL did not become ready in time" >&2
-          docker logs mysql-ci || true
-          exit 1
+          fi
 
       - name: Create test databases (idempotent)
         run: |
@@ -73,8 +127,8 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "20"
+          cache: "npm"
 
       - name: Cache node_modules
         uses: actions/cache@v4
