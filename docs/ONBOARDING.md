@@ -102,6 +102,14 @@ npm run prisma:db:seed --workspace=post
 
 ---
 
+> **Note on naming conventions**  
+> Entity Relationship Diagrams (ERDs) in our docs use `snake_case` for clarity and visual consistency (e.g., `user_id`, `created_at`).  
+> The actual database and Prisma schema definitions use `camelCase` (e.g., `userId`, `createdAt`).  
+> **The Prisma schema is always the source of truth** — use it when working with code or writing queries.
+
+
+---
+
 ## Scripts & Workflows
 
 All scripts are available via root `package.json`. Some useful ones:
