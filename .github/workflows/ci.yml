@@ -26,6 +26,7 @@ jobs:
           --health-retries=3
 
     env:
+      CI: true
       NODE_ENV: test
 
     steps:

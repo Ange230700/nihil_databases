@@ -29,7 +29,7 @@
     "copy-envs": "for d in user post; do cp -n $d/.env.sample $d/.env || true; done",
     "commit": "git-cz",
     "commitlint": "commitlint --edit",
-    "postinstall": "npx tsc --version && rm -rf shared/dist shared/tsconfig.tsbuildinfo user/dist user/tsconfig.tsbuildinfo post/dist post/tsconfig.tsbuildinfo && npm run prisma:generate:all && npm run build:all"
+    "postinstall": "node scripts/postinstall.mjs"
   },
   "repository": {
     "type": "git",

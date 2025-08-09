@@ -1,6 +1,7 @@
 {
   "cSpell.words": [
     "alwaysdata",
+    "CIRCLECI",
     "datasource",
     "elif",
     "eslintcache",
@@ -19,7 +20,9 @@
     "prisma",
     "randompassword",
     "Reshare",
+    "TEAMCITY",
     "testdb",
-    "userprofile"
+    "userprofile",
+    "Veyor"
   ]
 }
