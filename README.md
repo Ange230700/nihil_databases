@@ -187,3 +187,33 @@ post ||--|{ post : "shares"
 ## 📄 License
 
 ISC © Ange KOUAKOU -->
+
+---
+
+## Submodules
+
+This repository uses **Git submodules** for the `user`, `post`, and `shared` packages.
+
+### Cloning with submodules
+```bash
+git clone git@github.com:Ange230700/nihil_databases.git
+cd nihil_databases
+git submodule update --init --recursive
+```
+
+### Pulling updates for main repo and submodules
+```bash
+git pull --recurse-submodules
+git submodule update --recursive --remote
+```
+
+### Adding or updating a submodule
+```bash
+git submodule add <repo-url> <path>
+git submodule update --init --recursive
+```
+
+> **Tip:** Each submodule has its own Git history and may have its own CI/CD pipeline.
+
+### Nx + Submodules
+When using Nx, note that `nx affected` will see a submodule change as a single SHA update, not per-file changes. This means **any change in a submodule counts the whole package as affected**. For precise builds/tests, run Nx commands inside each submodule’s repo. For integration checks, use `--all` targets from the root.
