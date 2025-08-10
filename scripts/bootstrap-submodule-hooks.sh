@@ -1,3 +1,5 @@
+# scripts\bootstrap-submodule-hooks.sh
+
 set -euo pipefail
 
 for d in user post shared; do

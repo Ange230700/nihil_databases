@@ -1,4 +1,5 @@
-# scripts/dev-user.sh
+# scripts\dev-user.sh
+
 set -euo pipefail
 pushd user
 cp -n .env.sample .env || true

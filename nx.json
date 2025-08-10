@@ -4,5 +4,6 @@
   "workspaceLayout": {
     "libsDir": ".",
     "appsDir": "."
-  }
+  },
+  "useInferencePlugins": false
 }

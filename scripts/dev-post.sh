@@ -1,4 +1,5 @@
-#!/usr/bin/env bash
+# scripts\dev-post.sh
+
 set -euo pipefail
 
 pushd post
