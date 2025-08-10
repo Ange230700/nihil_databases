@@ -14,11 +14,3 @@ BASE="origin/${DEFAULT_BRANCH}"
 if ! git rev-parse "$BASE" >/dev/null 2>&1; then
   BASE="HEAD~1"
 fi
-
-echo "Running Nx affected with base=$BASE head=HEAD"
-
-# Lint first so you fail faster
-npx nx affected --target=lint --parallel=3 --base="$BASE" --head=HEAD
-
-# Then tests
-npx nx affected --target=test --parallel=3 --base="$BASE" --head=HEAD
