@@ -1,0 +1,4 @@
+[submodule "user"]
+	path = user
+	url = git@github.com:Ange230700/nihil_db_user.git
+	branch = main
