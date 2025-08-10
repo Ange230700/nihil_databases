@@ -1,0 +1,91 @@
+{
+  "name": "nihildbpost",
+  "version": "1.0.6",
+  "description": "Post Service Database",
+  "main": "dist/lib/client.js",
+  "types": "dist/lib/client.d.ts",
+  "files": [
+    "prisma/generated",
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "pretest": "npm run prisma:format && npm run prisma:migrate:reset:force",
+    "test": "jest",
+    "lint": "eslint .",
+    "build": "tsc -b",
+    "clean": "rm -rf dist prisma/generated node_modules tsconfig.tsbuildinfo",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate:dev": "prisma migrate dev",
+    "prisma:migrate:deploy": "prisma migrate deploy",
+    "prisma:migrate:reset": "prisma migrate reset",
+    "prisma:migrate:reset:force": "prisma migrate reset --force",
+    "prisma:migrate:status": "prisma migrate status",
+    "prisma:db:seed": "prisma db seed",
+    "prisma:db:push": "prisma db push",
+    "prisma:db:pull": "prisma db pull",
+    "prisma:format": "prisma format",
+    "db:cleanup": "tsx prisma/helpers/cleanUp.ts",
+    "prisma:studio": "prisma studio",
+    "publish:package": "npm publish --access public"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "devDependencies": {
+    "@faker-js/faker": "^9.8.0",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^22.15.29",
+    "dotenv-cli": "^9.0.0",
+    "jest": "^30.0.2",
+    "prisma": "^6.11.1",
+    "ts-jest": "^29.4.0",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3"
+  },
+  "jest": {
+    "globalSetup": "./prisma/testSetup.ts",
+    "moduleFileExtensions": [
+      "js",
+      "json",
+      "ts"
+    ],
+    "rootDir": ".",
+    "testRegex": ".*\\.spec\\.ts$",
+    "extensionsToTreatAsEsm": [
+      ".ts"
+    ],
+    "transform": {
+      "^.+\\.(t|j)s$": [
+        "ts-jest",
+        {
+          "useESM": true
+        }
+      ]
+    },
+    "collectCoverageFrom": [
+      "**/*.{ts,js}"
+    ],
+    "coverageDirectory": "./coverage",
+    "testEnvironment": "node",
+    "moduleNameMapper": {
+      "^nihildbshared$": "<rootDir>/../shared/src/index.ts",
+      "^nihildbshared/(.*)$": "<rootDir>/../shared/src/$1",
+      "^nihildbpost/(.*)$": "<rootDir>/../post/$1"
+    }
+  },
+  "prisma": {
+    "seed": "tsx prisma/main.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.11.1",
+    "argon2": "^0.43.0"
+  }
+}
