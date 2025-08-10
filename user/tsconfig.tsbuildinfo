@@ -1,1 +1,0 @@
-{"root":["./prisma/main.ts","./prisma/seed.spec.ts","./prisma/seed.ts","./prisma/testsetup.ts","./prisma/helpers/cleanup.ts","./prisma/lib/client.ts"],"version":"5.9.2"}

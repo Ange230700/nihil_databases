@@ -1,0 +1,14 @@
+# .gitmodules
+
+[submodule "user"]
+	path = user
+	url = git@github.com:Ange230700/nihil_db_user.git
+	branch = main
+[submodule "post"]
+	path = post
+	url = git@github.com:Ange230700/nihil_db_post.git
+	branch = main
+[submodule "shared"]
+	path = shared
+	url = git@github.com:Ange230700/nihil_db_shared.git
+	branch = main

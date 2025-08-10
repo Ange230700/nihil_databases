@@ -1,24 +1,49 @@
 #!/usr/bin/env bash
 set -euo pipefail
+. "$(dirname "$0")/_/husky.sh"
 
-# Always get the latest remote refs so our base exists
-git fetch origin --quiet
+echo "🔁 initializing submodules…"
+git submodule update --init --recursive
 
-# Detect remote default branch (falls back to main)
-DEFAULT_BRANCH="$(git rev-parse --abbrev-ref origin/HEAD 2>/dev/null | sed 's@^origin/@@' || echo main)"
+echo "🔍 checking submodules status…"
+git submodule foreach --recursive '
+  set -e
+  echo ""
+  echo "— $name —"
 
-# Prefer diffing against the remote default branch
-BASE="origin/${DEFAULT_BRANCH}"
+  # 1) uncommitted/staged changes guard
+  if ! git diff --quiet || ! git diff --cached --quiet; then
+    echo "❌ $name has uncommitted or staged changes. Commit or stash before pushing the superproject."
+    exit 1
+  fi
 
-# If that ref still doesn't exist (first push or detached state), fall back to previous commit
-if ! git rev-parse "$BASE" >/dev/null 2>&1; then
-  BASE="HEAD~1"
-fi
+  # 2) upstream existence
+  upstream=$(git rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null || true)
+  if [ -z "$upstream" ]; then
+    echo "ℹ️  $name has no upstream set (e.g., no remote tracking branch). Skipping ahead/behind checks."
+    exit 0
+  fi
 
-echo "Running Nx affected with base=$BASE head=HEAD"
+  # 3) refresh remote status
+  git fetch --quiet --prune
 
-# Lint first so you fail faster
-npx nx affected --target=lint --parallel=3 --base="$BASE" --head=HEAD
+  # 4) ahead/behind computation
+  counts=$(git rev-list --left-right --count "$upstream"...HEAD || echo "0	0")
+  behind=$(echo "$counts" | awk "{print \$1}")
+  ahead=$(echo "$counts" | awk "{print \$2}")
 
-# Then tests
-npx nx affected --target=test --parallel=3 --base="$BASE" --head=HEAD
+  if [ "$behind" != "0" ]; then
+    echo "❌ $name is BEHIND $upstream by $behind commit(s). Pull/rebase the submodule first."
+    exit 1
+  fi
+
+  if [ "$ahead" != "0" ]; then
+    echo "❌ $name is AHEAD of $upstream by $ahead commit(s). Push the submodule first."
+    exit 1
+  fi
+
+  echo "✅ $name is clean and in sync with $upstream."
+'
+
+echo ""
+echo "✅ all submodules clean & pushed. proceeding with superproject push…"
