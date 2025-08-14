@@ -1,36 +1,46 @@
 #!/usr/bin/env bash
 set -euo pipefail
-. "$(dirname "$0")/_/husky.sh"
 
-echo "🔁 initializing submodules…"
-git submodule update --init --recursive
+# ensure we run at repo root
+toplevel=$(git rev-parse --show-toplevel)
+cd "$toplevel"
 
-echo "🔍 checking submodules status…"
+echo "🔍 verifying submodules (read-only)…"
+
+# 0) fail fast if any submodule is uninitialized
+if git submodule status --recursive | grep -q '^-'; then
+  echo "❌ Uninitialized submodules detected."
+  echo "   Run once (outside the hook): git submodule update --init --recursive"
+  exit 1
+fi
+
+# 1) iterate each submodule to check cleanliness + ahead/behind
 git submodule foreach --recursive '
   set -e
   echo ""
   echo "— $name —"
 
-  # 1) uncommitted/staged changes guard
+  # uncommitted/staged changes guard
   if ! git diff --quiet || ! git diff --cached --quiet; then
     echo "❌ $name has uncommitted or staged changes. Commit or stash before pushing the superproject."
     exit 1
   fi
 
-  # 2) upstream existence
   upstream=$(git rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null || true)
   if [ -z "$upstream" ]; then
-    echo "ℹ️  $name has no upstream set (e.g., no remote tracking branch). Skipping ahead/behind checks."
+    echo "ℹ️  $name has no upstream set (no tracking branch). Skipping ahead/behind checks."
     exit 0
   fi
 
-  # 3) refresh remote status
+  # read-only network update of refs (does not touch config like core.worktree)
   git fetch --quiet --prune
 
-  # 4) ahead/behind computation
-  counts=$(git rev-list --left-right --count "$upstream"...HEAD || echo "0	0")
-  behind=$(echo "$counts" | awk "{print \$1}")
-  ahead=$(echo "$counts" | awk "{print \$2}")
+  counts=$(git rev-list --left-right --count "$upstream"...HEAD 2>/dev/null || echo "0 0")
+  # Split robustly on any whitespace (tabs/spaces/newlines)
+  read -r behind ahead <<<"$counts"
+  # Fallbacks if parsing fails
+  [[ "$behind" =~ ^[0-9]+$ ]] || behind=0
+  [[ "$ahead"  =~ ^[0-9]+$ ]] || ahead=0
 
   if [ "$behind" != "0" ]; then
     echo "❌ $name is BEHIND $upstream by $behind commit(s). Pull/rebase the submodule first."
@@ -46,4 +56,4 @@ git submodule foreach --recursive '
 '
 
 echo ""
-echo "✅ all submodules clean & pushed. proceeding with superproject push…"
+echo "✅ all submodules clean & synced. proceeding with superproject push…"
