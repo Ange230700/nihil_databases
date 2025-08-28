@@ -1,219 +1,257 @@
 <!-- README.md -->
 
-# Nihil Databases 🚀
+# Nihil Databases Monorepo
 
-> **Service-per-Database monorepo** for the Nihil platform.  
-> Each core domain (user, post, etc.) runs as an independent service with its own database, Prisma schema, and seed logic.
+<!-- ![Nihil Logo](link-to-logo.png) -->
 
----
+The **Nihil Databases Monorepo** is the foundation of the [Nihil platform](https://github.com/Ange230700/nihil_databases).  
+It manages **service-specific database packages** (User, Post) with isolated schemas, seeding logic, Prisma clients, and shared utilities.
 
-## 📐 Architecture Overview
-
-- **Service-per-Database** – Each service (e.g., `user`, `post`) owns its own database and Prisma schema.
-- **Monorepo Management** – Managed with [Nx](https://nx.dev/) and npm workspaces for scalable, maintainable development.
-- **Shared Utilities** – Common types, enums, and utilities live in [`shared/`](./shared) and are imported by services.
-- **Automated CI/CD** – GitHub Actions builds, migrates, and tests only changed services.
-- **Development Workflow** – Unified scripts at the root for building, testing, and maintaining all services in one command.
+Each service is implemented as a **versioned npm package** (`nihildbuser`, `nihildbpost`, `nihildbshared`) that can be published independently and consumed by other Nihil services.
 
 ---
 
-## 📂 Project Structure
+## Table of Contents
+- [Architecture](#architecture)
+- [Tech Stack](#tech-stack)
+- [Getting Started](#getting-started)
+- [Workspace Commands](#workspace-commands)
+- [Services](#services)
+  - [User Database](#user-database)
+  - [Post Database](#post-database)
+- [Testing](#testing)
+- [Deployment](#deployment)
+- [Environment Variables](#environment-variables)
+- [Contributing](#contributing)
+- [License](#license)
+- [Contact](#contact)
+
+---
+
+## Architecture
+
+This repo is managed with **Nx** and structured as a **multi-package monorepo**:
 
 ```
-nihil_databases/
-├── user/           # User service (Prisma schema, seed, tests)
-├── post/           # Post service (Prisma schema, seed, tests)
-├── shared/         # Shared utilities, types, enums
-├── docs/           # Architecture docs & ERDs
-├── .github/        # CI/CD workflows
-├── package.json    # Root workspace config/scripts
-├── nx.json         # Nx workspace config
-└── ...
-```
+
+.
+├── user/       # User Database Service (nihildbuser)
+├── post/       # Post Database Service (nihildbpost)
+├── shared/     # Shared utils (nihildbshared)
+├── docs/       # ERDs, design notes
+├── docker-compose.dev.yml
+├── package.json
+├── nx.json
+└── .github/workflows/ci.yml
+
+````
+
+* Each service has its **own database**, Prisma schema, migrations, and seeding logic.  
+* The `shared` package provides **reusable helpers** (e.g. `deleteSafely`, `runSeed`).  
+* CI/CD runs tests and migrations in isolated MySQL containers.  
+* Submodules allow each service to evolve independently while staying in sync.
 
 ---
 
-## ⚡ Quickstart
+## Tech Stack
 
-### 1. Clone & Install
+- **Language**: TypeScript (ESM, strict mode)  
+- **ORM**: [Prisma](https://www.prisma.io/)  
+- **Databases**: MySQL 8.x (separate per service)  
+- **Tooling**: Nx, Husky, Commitlint, Lint-staged, Prettier  
+- **Security**: [argon2](https://www.npmjs.com/package/argon2) for password hashing  
+- **Testing**: Jest + ts-jest + isolated DB resets  
+- **Containerization**: Docker + docker-compose  
+- **CI/CD**: GitHub Actions with MySQL caching for fast test runs  
 
-```sh
+---
+
+## Getting Started
+
+### Prerequisites
+- Node.js (>= 20.x)  
+- MySQL (>= 8.x) or Docker  
+- NPM (>= 11.x)
+
+### Installation
+
+Clone the repo and install dependencies:
+
+```bash
 git clone https://github.com/Ange230700/nihil_databases.git
 cd nihil_databases
 npm install
-```
-
-### 2. Set Up Local Databases
-
-Requires **MySQL 8+** running locally.
-
-```sh
-mysql -u root -p -e "CREATE DATABASE nihil_user_dev;"
-mysql -u root -p -e "CREATE DATABASE nihil_post_dev;"
-```
-
-### 3. Copy `.env` Files
-
-```sh
 npm run copy-envs
-# Then edit user/.env and post/.env to match your DB credentials
-```
+````
 
-### 4. Generate Prisma Clients & Run Migrations
+This creates `.env` files for both `user` and `post` services from their `.env.sample`.
 
-```sh
-npm run prisma:generate:all
-npm run prisma:migrate:dev:all
-```
+### Start Dev Databases
 
-### 5. Seed Databases
-
-```sh
-npm run prisma:db:seed --workspace=user
-npm run prisma:db:seed --workspace=post
-```
-
-### 6. Open Prisma Studio
-
-```sh
-npm run prisma:studio:user
-npm run prisma:studio:post
-```
-
----
-
-## 🗄 Cross-Service Data
-
-- **No cross-database foreign keys** – IDs are stored as plain strings when referencing another service’s entities (e.g., `post.userId`).
-- **Validation happens in the API layer**, not the database.
-- This ensures services remain **loosely coupled** and deployable independently.
-
----
-
-## 🛠 Common Commands
-
-From the repo root:
-
-| Command | Description |
-| --- | --- |
-| `npm run build:all` | Build all packages |
-| `npm run lint:all` | Lint all packages |
-| `npm run test:all` | Run all tests |
-| `npm run clean:all` | Clean all build outputs & node_modules |
-| `npm run prisma:generate:all` | Generate Prisma clients for all services |
-| `npm run prisma:migrate:dev:all` | Apply dev migrations for all services |
-| `npm run prisma:migrate:deploy:all` | Apply prod migrations for all services |
-| `npm run prisma:db:seed:all` | Seed all services |
-
-Per service (e.g., `user`):
-
-```sh
-npm run prisma:db:seed --workspace=user
-npm run prisma:migrate:dev --workspace=user
-```
-
----
-
-## 🧪 Testing
-
-- **Test runner:** [Jest](https://jestjs.io/) + [ts-jest](https://kulshekhar.github.io/ts-jest/)
-- Tests are colocated with source files.
-- **Isolated seeds:** `user` seeds run inside a transaction and roll back for test isolation.
-
-Run all tests:
-
-```sh
-npm run test:all
-```
-
-Run tests for one service:
-
-```sh
-npm run test --workspace=user
-```
-
----
-
-## 🤖 CI/CD
-
-GitHub Actions runs on every push/PR to `main` and `develop`:
-
-1. Spins up MySQL service.
-2. Installs dependencies with caching for `node_modules` and Prisma artifacts.
-3. Creates test databases.
-4. Runs **affected** lint, build, migration, and test tasks only for changed services.
-
-See [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
-
----
-
-## 📜 ERDs
-
-ERDs are in [`docs/`](./docs) and service-specific `docs/` folders.
-
-Example: **User Service**
-```
-user ||--o| userprofile : "has"
-```
-
-Example: **Post Service**
-```
-post }|..|| user : "posted by"
-post ||--|{ post : "shares"
-```
-
----
-
-## 🆘 Troubleshooting
-
-- **Build/lint errors**  
-  ```sh
-  npm run clean:all && npm install && npm run build:all
-  ```
-
-- **Database errors**  
-  Check MySQL is running and `.env` DB URLs are correct.
-
-- **Schema changes not reflected**  
-  ```sh
-  npm run prisma:migrate:dev:all
-  ```
-
-- **Need to wipe data**  
-  Use cleanup scripts in each service’s `prisma/helpers`.
-
-<!-- ---
-
-## 📄 License
-
-ISC © Ange KOUAKOU -->
-
----
-
-## Submodules
-
-This repository uses **Git submodules** for the `user`, `post`, and `shared` packages.
-
-### Cloning with submodules
 ```bash
-git clone git@github.com:Ange230700/nihil_databases.git
-cd nihil_databases
-git submodule update --init --recursive
+npm run db:up
 ```
 
-### Pulling updates for main repo and submodules
+This spins up two MySQL containers (`mysql-user`, `mysql-post`) via `docker-compose.dev.yml`.
+
+---
+
+## Workspace Commands
+
+Global scripts in `package.json` let you manage all services:
+
+| Command                        | Description                                |
+| ------------------------------ | ------------------------------------------ |
+| `npm run build:all`            | Build all packages                         |
+| `npm run test:all`             | Run all tests                              |
+| `npm run lint:all`             | Run eslint across all workspaces           |
+| `npm run clean:all`            | Remove build + cache artifacts             |
+| `npm run publish:all:packages` | Publish all packages to npm                |
+| `npm run prisma:generate:all`  | Regenerate Prisma clients for all services |
+| `npm run prisma:db:push:all`   | Apply schemas for User + Post DBs          |
+| `npm run prisma:db:seed:all`   | Seed both services                         |
+| `npm run test:all:with-db`     | Bring up DB containers, run all tests      |
+
+---
+
+## Services
+
+### User Database
+
+Package: [`nihildbuser`](./user)
+Schema manages **users** and their **profiles** (1:1 relationship).
+
+ERD:
+
+```mermaid
+erDiagram
+    user {
+        UUID id PK
+        STRING username
+        STRING email
+        STRING password_hash
+        STRING display_name
+        STRING avatar_url
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    userprofile {
+        UUID id PK
+        UUID user_id FK
+        STRING bio
+        STRING location
+        DATE birthdate
+        STRING website
+        DATETIME updated_at
+    }
+    user ||--o| userprofile : "has"
+```
+
+---
+
+### Post Database
+
+Package: [`nihildbpost`](./post)
+Schema manages **posts** with self-references for shares/retweets.
+
+ERD:
+
+```mermaid
+erDiagram
+    post {
+        UUID id PK
+        UUID user_id FK
+        TEXT content
+        STRING media_url
+        DATETIME created_at
+        DATETIME updated_at
+        BOOLEAN is_deleted
+        UUID original_post_id FK "for shares/retweets"
+    }
+    post }|..|| user : "posted by"
+    post ||--|{ post : "shares"
+```
+
+---
+
+## Testing
+
+Run all tests (with fresh DBs):
+
 ```bash
-git pull --recurse-submodules
-git submodule update --recursive --remote
+npm run test:all:with-db
 ```
 
-### Adding or updating a submodule
+Highlights:
+
+* Jest with Prisma transaction rollbacks for isolation
+* Seeds run before tests, data is rolled back after
+* CI uses GitHub Actions with MySQL cache for speed
+
+---
+
+## Deployment
+
+### Docker (per service)
+
+Each service includes a Dockerfile (multi-stage build). Example:
+
 ```bash
-git submodule add <repo-url> <path>
-git submodule update --init --recursive
+docker build -t nihil-user-db ./user
+docker run --env-file user/.env nihil-user-db
 ```
 
-> **Tip:** Each submodule has its own Git history and may have its own CI/CD pipeline.
+The container auto-applies schema and seeds data at startup.
 
-### Nx + Submodules
-When using Nx, note that `nx affected` will see a submodule change as a single SHA update, not per-file changes. This means **any change in a submodule counts the whole package as affected**. For precise builds/tests, run Nx commands inside each submodule’s repo. For integration checks, use `--all` targets from the root.
+### CI/CD
+
+* GitHub Actions workflow: `.github/workflows/ci.yml`
+* Runs lint, build, push schema, and test jobs for **affected services only**
+* Caches MySQL datadir between runs for faster migrations
+
+---
+
+## Environment Variables
+
+Each service has its own `.env.sample`.
+
+### User
+
+```env
+USER_DATABASE_URL="mysql://root:root@localhost:3309/nihil_user_dev"
+NODE_ENV=dev
+```
+
+### Post
+
+```env
+POST_DATABASE_URL="mysql://root:root@localhost:3310/nihil_post_dev"
+NODE_ENV=dev
+```
+
+---
+
+## Contributing
+
+Contributions are welcome!
+
+1. Fork the repository
+2. Create a branch (`git checkout -b feat/my-feature`)
+3. Commit (`git commit -m "✨ add my feature"`)
+4. Push (`git push origin feat/my-feature`)
+5. Create a Pull Request
+
+Pre-push hooks ensure submodules are in sync and tests pass.
+
+---
+
+## License
+
+MIT License
+
+---
+
+## Contact
+
+**Ange KOUAKOU**
+[GitHub](https://github.com/Ange230700) • [Email](mailto:kouakouangeericstephane@gmail.com)
