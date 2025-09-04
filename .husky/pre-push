@@ -1,5 +1,4 @@
-#!/usr/bin/env bash
-set -euo pipefail
+# nihil_databases\.husky\pre-push
 
 # ensure we run at repo root
 toplevel=$(git rev-parse --show-toplevel)

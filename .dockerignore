@@ -1,4 +1,4 @@
-# .dockerignore
+# nihil_databases\.dockerignore
 
 node_modules
 dist
